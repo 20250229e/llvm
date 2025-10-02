@@ -360,5 +360,5 @@ jobs:
         dry_run: ${{ inputs.benchmark_dry_run }}
         build_ref: ${{ inputs.repo_ref }}
       env:
-        RUNNER_TAG: ${{ inputs.runner }}
+        RUNNER_TAG: '["test-runner2"]'
         GITHUB_TOKEN: ${{ secrets.LLVM_SYCL_BENCHMARK_TOKEN }}
