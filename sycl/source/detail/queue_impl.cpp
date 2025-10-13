@@ -567,6 +567,7 @@ EventImplPtr queue_impl::submit_command_to_graph(
 EventImplPtr queue_impl::submit_kernel_direct_impl(
     const NDRDescT &NDRDesc, detail::HostKernelRefBase &HostKernel,
     detail::DeviceKernelInfo *DeviceKernelInfo, bool CallerNeedsEvent,
+    const detail::KernelLaunchPropertyWrapper::KernelLaunchPropertiesT &Props,
     const detail::code_location &CodeLoc, bool IsTopCodeLoc) {
 
   KernelData KData;
@@ -574,6 +575,12 @@ EventImplPtr queue_impl::submit_kernel_direct_impl(
   KData.setDeviceKernelInfoPtr(DeviceKernelInfo);
   KData.setKernelFunc(HostKernel.getPtr());
   KData.setNDRDesc(NDRDesc);
+
+  // Validate and set kernel launch properties.
+  KData.validateAndSetKernelLaunchProperties(
+      Props, getCommandGraph() != nullptr, /*HasGraph?*/
+      getDeviceImpl()                      /*device_impl*/
+  );
 
   auto SubmitKernelFunc = [&](detail::CG::StorageInitHelper &CGData,
                               bool SchedulerBypass) -> EventImplPtr {
