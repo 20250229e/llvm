@@ -1840,10 +1840,6 @@ void CompilerInvocationBase::GenerateCodeGenArgs(const CodeGenOptions &Opts,
        serializeSanitizerKinds(Opts.SanitizeAnnotateDebugInfo))
     GenerateArg(Consumer, OPT_fsanitize_annotate_debug_info_EQ, Sanitizer);
 
-  if (Opts.AllocTokenMax)
-    GenerateArg(Consumer, OPT_falloc_token_max_EQ,
-                std::to_string(*Opts.AllocTokenMax));
-
   if (!Opts.EmitVersionIdentMetadata)
     GenerateArg(Consumer, OPT_Qn);
 
@@ -2364,15 +2360,6 @@ bool CompilerInvocation::ParseCodeGenArgs(CodeGenOptions &Opts, ArgList &Args,
     } else {
       Opts.AllowRuntimeCheckSkipHotCutoff = A;
     }
-  }
-
-  if (const auto *Arg = Args.getLastArg(options::OPT_falloc_token_max_EQ)) {
-    StringRef S = Arg->getValue();
-    uint64_t Value = 0;
-    if (S.getAsInteger(0, Value))
-      Diags.Report(diag::err_drv_invalid_value) << Arg->getAsString(Args) << S;
-    else
-      Opts.AllocTokenMax = Value;
   }
 
   Opts.EmitVersionIdentMetadata = Args.hasFlag(OPT_Qy, OPT_Qn, true);
@@ -4017,6 +4004,7 @@ void CompilerInvocationBase::GenerateLangArgs(const LangOptions &Opts,
   if (!Opts.RandstructSeed.empty())
     GenerateArg(Consumer, OPT_frandomize_layout_seed_EQ, Opts.RandstructSeed);
 
+<<<<<<< HEAD
   if (!Opts.GPURelocatableDeviceCode)
     GenerateArg(Consumer, OPT_fno_gpu_rdc);
 }
@@ -4095,6 +4083,29 @@ void CompilerInvocation::ParseFpAccuracyArgs(LangOptions &Opts, ArgList &Args,
         }
       }
     }
+=======
+  if (Opts.AllocTokenMax)
+    GenerateArg(Consumer, OPT_falloc_token_max_EQ,
+                std::to_string(*Opts.AllocTokenMax));
+
+  if (Opts.AllocTokenMode) {
+    StringRef S;
+    switch (*Opts.AllocTokenMode) {
+    case llvm::AllocTokenMode::Increment:
+      S = "increment";
+      break;
+    case llvm::AllocTokenMode::Random:
+      S = "random";
+      break;
+    case llvm::AllocTokenMode::TypeHash:
+      S = "typehash";
+      break;
+    case llvm::AllocTokenMode::TypeHashPointerSplit:
+      S = "typehashpointersplit";
+      break;
+    }
+    GenerateArg(Consumer, OPT_falloc_token_mode_EQ, S);
+>>>>>>> f7fb52aea0b90a2fa76f162e8cbd481c5e1bd91b
   }
 }
 
@@ -4727,6 +4738,23 @@ bool CompilerInvocation::ParseLangArgs(LangOptions &Opts, ArgList &Args,
 
   if (const Arg *A = Args.getLastArg(OPT_frandomize_layout_seed_EQ))
     Opts.RandstructSeed = A->getValue(0);
+
+  if (const auto *Arg = Args.getLastArg(options::OPT_falloc_token_max_EQ)) {
+    StringRef S = Arg->getValue();
+    uint64_t Value = 0;
+    if (S.getAsInteger(0, Value))
+      Diags.Report(diag::err_drv_invalid_value) << Arg->getAsString(Args) << S;
+    else
+      Opts.AllocTokenMax = Value;
+  }
+
+  if (const auto *Arg = Args.getLastArg(options::OPT_falloc_token_mode_EQ)) {
+    StringRef S = Arg->getValue();
+    if (auto Mode = getAllocTokenModeFromString(S))
+      Opts.AllocTokenMode = Mode;
+    else
+      Diags.Report(diag::err_drv_invalid_value) << Arg->getAsString(Args) << S;
+  }
 
   // Validate options for HLSL
   if (Opts.HLSL) {
